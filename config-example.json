@@ -7,11 +7,11 @@
   },
 
   "datasources": {
-    "dbpedia": {
-      "title": "DBPedia",
+    "watdiv": {
+      "title": "Watdiv",
       "type": "HdtDatasource",
-      "description": "DBPedia with an HDT back-end",
-      "settings": { "file": "data/dbpedia.hdt" }
+      "description": "??",
+      "settings": { "file": "data/watdiv.hdt" }
     },
     "swdf": {
       "title": "Semantic Web Dog Food",

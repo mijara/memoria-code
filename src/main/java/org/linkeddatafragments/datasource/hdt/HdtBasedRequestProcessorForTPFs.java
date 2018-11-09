@@ -9,7 +9,7 @@ import org.apache.jena.rdf.model.RDFNode;
 
 import org.linkeddatafragments.datasource.AbstractRequestProcessorForTriplePatterns;
 import org.linkeddatafragments.datasource.IFragmentRequestProcessor;
-import org.linkeddatafragments.datasource.hdt.cache.Sache;
+import org.linkeddatafragments.datasource.hdt.cache.Cache;
 import org.linkeddatafragments.fragments.ILinkedDataFragment;
 import org.linkeddatafragments.fragments.tpf.ITriplePatternElement;
 import org.linkeddatafragments.fragments.tpf.ITriplePatternFragmentRequest;
@@ -126,15 +126,13 @@ public class HdtBasedRequestProcessorForTPFs
 
             // initial variables.
             IteratorTripleID matches;
-            int initialOffset = 0;
 
-            Sache<String, IteratorCacheable> cache = Sache.getInstance(String.class, IteratorCacheable.class, 50);
+            Cache<String, IteratorCacheable> cache = Cache.getInstance(String.class, IteratorCacheable.class, 50);
 
             IteratorCacheable cached = cache.find(tripleID.toString());
             if (cached != null) {
                 // cached matches found.
                 matches = cached.iteratorTripleID;
-                initialOffset = cached.position;
             } else {
                 matches = datasource.getTriples().search(tripleID);
             }
@@ -147,6 +145,7 @@ public class HdtBasedRequestProcessorForTPFs
             if (hasMatches) {
                 // try to jump directly to the offset
                 boolean atOffset;
+
                 if (matches.canGoTo()) {
                     try {
                         matches.goTo(offset);
@@ -157,27 +156,22 @@ public class HdtBasedRequestProcessorForTPFs
                     }
                 } // if not possible, advance to the offset iteratively
                 else {
-                    if (cached == null) {
-                        matches.goToStart();
-                    }
+                    // go to start of matches or cached matches.
+                    matches.goToStart();
 
-                    int i;
-                    for (i = initialOffset; !(atOffset = i == offset) && matches.hasNext(); i++) {
+                    for (int i = 0; !(atOffset = i == offset) && matches.hasNext(); i++) {
                         matches.next();
                     }
                 }
 
                 // try to add `limit` triples to the result model
                 if (atOffset) {
-                    int i;
-                    for (i = 0; i < limit && matches.hasNext(); i++) {
+                    for (int i = 0; i < limit && matches.hasNext(); i++) {
                         triples.add(triples.asStatement(toTriple(matches.next())));
                     }
 
                     if (cached == null) {
-                        cache.insert(tripleID.toString(), new IteratorCacheable(matches, i), -1);
-                    } else {
-                        cached.position = i;
+                        cache.insert(tripleID.toString(), new IteratorCacheable(matches), -1);
                     }
                 }
             }
@@ -278,11 +272,9 @@ public class HdtBasedRequestProcessorForTPFs
 
     private class IteratorCacheable {
         IteratorTripleID iteratorTripleID;
-        int position;
 
-        public IteratorCacheable(IteratorTripleID iteratorTripleID, int position) {
+        public IteratorCacheable(IteratorTripleID iteratorTripleID) {
             this.iteratorTripleID = iteratorTripleID;
-            this.position = position;
         }
     }
 }

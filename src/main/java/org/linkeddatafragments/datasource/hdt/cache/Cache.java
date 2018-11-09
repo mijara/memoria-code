@@ -1,29 +1,27 @@
 package org.linkeddatafragments.datasource.hdt.cache;
 
-import org.rdfhdt.hdt.triples.IteratorTripleID;
-
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Sache is a LRU cache built with a HashMap with pointers to a Doubly Linked List, allowing
+ * Cache is a LRU cache built with a HashMap with pointers to a Doubly Linked List, allowing
  * fast insertion and removal.
  *
  * @param <K> The key type.
  * @param <V> The value type.
  */
-public class Sache<K, V> {
+public class Cache<K, V> {
     private Map<K, Node<K, V>> fastAccess = new HashMap<>();
     private DoublyLinkedList<K, V> list = new DoublyLinkedList<>();
 
-    private static Map<String, Sache> instances = new HashMap<>();
+    private static Map<String, Cache> instances = new HashMap<>();
 
     private int maxSize;
 
     public int misses;
     public int oks;
 
-    public Sache(int maxSize) {
+    public Cache(int maxSize) {
         this.maxSize = maxSize;
     }
 
@@ -78,14 +76,14 @@ public class Sache<K, V> {
         fastAccess.remove(node.key);
     }
 
-    public static <K, V> Sache<K, V> getInstance(Class<K> cls1, Class<V> cls2, int maxSize) {
+    public static <K, V> Cache<K, V> getInstance(Class<K> cls1, Class<V> cls2, int maxSize) {
         String code = cls1.getName() + ":" + cls2.getName();
 
         if (!instances.containsKey(code)) {
-            instances.put(code, new Sache<K, V>(maxSize));
+            instances.put(code, new Cache<K, V>(maxSize));
         }
 
-        return (Sache<K, V>) instances.get(code);
+        return (Cache<K, V>) instances.get(code);
     }
 
     public void launchVulture() {

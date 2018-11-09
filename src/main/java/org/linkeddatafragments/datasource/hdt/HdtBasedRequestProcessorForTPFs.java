@@ -128,11 +128,12 @@ public class HdtBasedRequestProcessorForTPFs
             IteratorTripleID matches;
 
             Cache<String, IteratorCacheable> cache = Cache.getInstance(String.class, IteratorCacheable.class, 50);
-
             IteratorCacheable cached = cache.find(tripleID.toString());
+
             if (cached != null) {
                 // cached matches found.
                 matches = cached.iteratorTripleID;
+                matches.goToStart();
             } else {
                 matches = datasource.getTriples().search(tripleID);
             }

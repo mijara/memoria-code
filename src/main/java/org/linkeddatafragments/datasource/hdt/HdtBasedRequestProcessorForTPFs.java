@@ -127,7 +127,7 @@ public class HdtBasedRequestProcessorForTPFs
             // initial variables.
             IteratorTripleID matches;
 
-            Cache<String, IteratorCacheable> cache = Cache.getInstance(String.class, IteratorCacheable.class, 50);
+            Cache<String, IteratorCacheable> cache = Cache.getInstance(String.class, IteratorCacheable.class, 512);
             IteratorCacheable cached = cache.find(tripleID.toString());
 
             if (cached != null) {

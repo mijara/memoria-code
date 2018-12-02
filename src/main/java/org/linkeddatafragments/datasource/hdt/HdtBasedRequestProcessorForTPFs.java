@@ -10,6 +10,7 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.linkeddatafragments.datasource.AbstractRequestProcessorForTriplePatterns;
 import org.linkeddatafragments.datasource.IFragmentRequestProcessor;
 import org.linkeddatafragments.datasource.hdt.cache.Cache;
+import org.linkeddatafragments.datasource.hdt.cache.LruCache;
 import org.linkeddatafragments.fragments.ILinkedDataFragment;
 import org.linkeddatafragments.fragments.tpf.ITriplePatternElement;
 import org.linkeddatafragments.fragments.tpf.ITriplePatternFragmentRequest;
@@ -40,6 +41,8 @@ public class HdtBasedRequestProcessorForTPFs
      * The dictionary
      */
     protected final NodeDictionary dictionary;
+
+    private static final Cache<String, IteratorTripleID> CACHE = new LruCache<>(8912);
 
     /**
      * Creates the request processor.
@@ -127,19 +130,18 @@ public class HdtBasedRequestProcessorForTPFs
             // initial variables.
             IteratorTripleID matches;
 
-            Cache<String, IteratorCacheable> cache = Cache.getInstance(String.class, IteratorCacheable.class, 512);
-            IteratorCacheable cached = cache.find(tripleID.toString());
+            IteratorTripleID cached = CACHE.find(tripleID.toString());
 
             if (cached != null) {
                 // cached matches found.
-                matches = cached.iteratorTripleID;
+                matches = cached;
                 matches.goToStart();
             } else {
                 matches = datasource.getTriples().search(tripleID);
             }
 
-            // Debug cache.
-            // System.out.println("Misses: " + cache.misses + ", oks: " + cache.oks);
+            // Debug CACHE.
+            // System.out.println("Misses: " + CACHE.misses + ", oks: " + CACHE.oks);
 
             boolean hasMatches = matches.hasNext();
 
@@ -170,10 +172,10 @@ public class HdtBasedRequestProcessorForTPFs
                     for (int i = 0; i < limit && matches.hasNext(); i++) {
                         triples.add(triples.asStatement(toTriple(matches.next())));
                     }
+                }
 
-                    if (cached == null) {
-                        cache.insert(tripleID.toString(), new IteratorCacheable(matches), -1);
-                    }
+                if (cached == null) {
+                    CACHE.insert(tripleID.toString(), matches);
                 }
             }
 

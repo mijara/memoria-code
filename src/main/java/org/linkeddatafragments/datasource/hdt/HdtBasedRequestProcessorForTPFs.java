@@ -42,7 +42,7 @@ public class HdtBasedRequestProcessorForTPFs
      */
     protected final NodeDictionary dictionary;
 
-    private static final Cache<String, IteratorTripleID> CACHE = new LruCache<>(8912);
+    private static final Cache<String, ILinkedDataFragment> CACHE = new LruCache<>(8912);
 
     /**
      * Creates the request processor.
@@ -100,7 +100,7 @@ public class HdtBasedRequestProcessorForTPFs
                 final ITriplePatternElement<RDFNode, String, String> object,
                 final long offset,
                 final long limit) {
-            return createFragmentWithCache(subject, predicate, object, offset, limit);
+            return createFragmentWithoutCache(subject, predicate, object, offset, limit);
         }
 
         protected ILinkedDataFragment createFragmentWithCache(
@@ -124,25 +124,17 @@ public class HdtBasedRequestProcessorForTPFs
                 return createEmptyTriplePatternFragment();
             }
 
+            String cacheId = String.format("%d:%d:%d-%d:%d", subjectId, predicateId, objectId, offset, limit);
+            ILinkedDataFragment fragment = CACHE.find(cacheId);
+            if (fragment != null) {
+                return fragment;
+            }
+
             final Model triples = ModelFactory.createDefaultModel();
             TripleID tripleID = new TripleID(subjectId, predicateId, objectId);
 
             // initial variables.
-            IteratorTripleID matches;
-
-            IteratorTripleID cached = CACHE.find(tripleID.toString());
-
-            if (cached != null) {
-                // cached matches found.
-                matches = cached;
-                matches.goToStart();
-            } else {
-                matches = datasource.getTriples().search(tripleID);
-            }
-
-            // Debug CACHE.
-            // System.out.println("Misses: " + CACHE.misses + ", oks: " + CACHE.oks);
-
+            IteratorTripleID matches = datasource.getTriples().search(tripleID);
             boolean hasMatches = matches.hasNext();
 
             if (hasMatches) {
@@ -173,10 +165,6 @@ public class HdtBasedRequestProcessorForTPFs
                         triples.add(triples.asStatement(toTriple(matches.next())));
                     }
                 }
-
-                if (cached == null) {
-                    CACHE.insert(tripleID.toString(), matches);
-                }
             }
 
             // estimates can be wrong; ensure 0 is returned if there are no results,
@@ -189,7 +177,11 @@ public class HdtBasedRequestProcessorForTPFs
 
             // create the fragment
             final boolean isLastPage = (estimatedTotal < offset + limit);
-            return createTriplePatternFragment(triples, estimatedTotal, isLastPage);
+
+            fragment = createTriplePatternFragment(triples, estimatedTotal, isLastPage);
+            CACHE.insert(cacheId, fragment);
+
+            return fragment;
         }
 
         protected ILinkedDataFragment createFragmentWithoutCache(

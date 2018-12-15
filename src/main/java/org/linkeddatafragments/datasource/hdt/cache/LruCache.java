@@ -73,4 +73,19 @@ public class LruCache<K, V> implements Cache<K, V> {
         list.remove(node);
         fastAccess.remove(node.key);
     }
+
+    public static void main(String[] args) {
+        Cache<String, String> cache = new LruCache<>(2);
+        cache.insert("Key #1", "Value #1");
+        cache.insert("Key #2", "Value #2");
+
+        System.out.println(cache.find("Key #1"));
+        System.out.println(cache.find("Key #2"));
+
+        cache.insert("Key #3", "Value #3");
+
+        System.out.println(cache.find("Key #1"));
+        System.out.println(cache.find("Key #2"));
+        System.out.println(cache.find("Key #3"));
+    }
 }

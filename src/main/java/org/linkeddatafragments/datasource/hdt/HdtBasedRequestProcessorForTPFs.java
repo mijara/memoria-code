@@ -100,7 +100,7 @@ public class HdtBasedRequestProcessorForTPFs
                 final ITriplePatternElement<RDFNode, String, String> object,
                 final long offset,
                 final long limit) {
-            return createFragmentWithoutCache(subject, predicate, object, offset, limit);
+            return createFragmentWithCache(subject, predicate, object, offset, limit);
         }
 
         protected ILinkedDataFragment createFragmentWithCache(
@@ -124,7 +124,7 @@ public class HdtBasedRequestProcessorForTPFs
                 return createEmptyTriplePatternFragment();
             }
 
-            String cacheId = String.format("%d:%d:%d-%d:%d", subjectId, predicateId, objectId, offset, limit);
+            String cacheId = subjectId + "." + predicateId + "." + objectId + "." + offset + "." + limit;
             ILinkedDataFragment fragment = CACHE.find(cacheId);
             if (fragment != null) {
                 return fragment;
